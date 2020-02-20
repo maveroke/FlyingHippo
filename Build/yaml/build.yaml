@@ -28,9 +28,9 @@ variables:
   Local.OutputDirectory: '$(Build.BinariesDirectory)/$(Pipe.Configuration)'
   Local.PrebuildScript: '$(Build.ArtifactStagingDirectory)/main-pre-build.sh'
   Local.AndroidBuild: '$(Build.ArtifactStagingDirectory)/main-android-build.sh'
-  Local.AndroidSolution: 'BuildDemo.Android/BuildDemo.Android.csproj'
-  Local.PlistFile: 'BuildDemo.iOS/Info.plist'
-  Local.ManifestFile: 'BuildDemo.Android/Properties/AndroidManifest.xml' 
+  Local.AndroidSolution: 'FlyingHippo/FlyingHippo.Android/FlyingHippo.Android.csproj'
+  Local.PlistFile: 'FlyingHippo/FlyingHippo.iOS/Info.plist'
+  Local.ManifestFile: 'FlyingHippo/FlyingHippo.Android/Properties/AndroidManifest.xml' 
   Local.ProjectSolution: '**/*.sln'
 
   #======================================================
@@ -127,23 +127,6 @@ steps:
     packageApp: true
     clean: false
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'custom'
-    projects: '**/*.Tests.csproj'
-    custom: 'test'
-    arguments: '--no-build --no-restore --configuration $(pipe.configuration) --collect:"XPlat Code Coverage" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover  --logger "trx"'
-
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'XUnit'
-    testResultsFiles: '**/*.trx'
-    testRunTitle: 'Code Tests or something'
-
-- task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: 'Cobertura'
-    summaryFileLocation: '**/coverage.cobertura.xml'
 
 - task: CopyFiles@2
   inputs:
@@ -171,6 +154,7 @@ steps:
                 $(Local.ManifestFile)
                 $(Library.PackageName)
                 QA
+                $(Library.AppCenter.QA.AndroidKey)
                 $(Build.ArtifactStagingDirectory)'
 
 - task: XamarinAndroid@1
@@ -198,6 +182,7 @@ steps:
                 $(Local.ManifestFile)
                 $(Library.PackageName)
                 PRE
+                $(Library.AppCenter.PRE.AndroidKey)
                 $(Build.ArtifactStagingDirectory)'
 
 - task: XamarinAndroid@1
@@ -224,7 +209,8 @@ steps:
     arguments: 'PROD
                 $(Local.ManifestFile)
                 $(Library.PackageName)
-                Build
+                FlyingHippo
+                $(Library.AppCenter.PROD.AndroidKey)
                 $(Build.ArtifactStagingDirectory)'
 
 - task: XamarinAndroid@1

@@ -6,7 +6,8 @@ environment="${1}"
 manifestTargetFile="${2}"
 packageName="${3}"
 appName="${4}"
-outputDirectory="${5}"
+appCenterKey="${5}"
+outputDirectory="${6}"
 lowerCaseEnvironment="$(echo "${environment}" | tr "[:upper:]" "[:lower:]")"
 
 echo "environment: ${environment}"
@@ -31,3 +32,5 @@ sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "android:
 sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "android:theme" "${theme}"
 sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "android:label" "${label}"
 sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "package" "${packageName}"
+
+sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" 'android:name="AppCenterKey" android:value=' "${appCenterKey}"

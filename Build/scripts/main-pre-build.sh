@@ -89,7 +89,7 @@ updateDevopsLibrary()
 	 -d "{
 	   \"id\": \"${libraryGroupId}\",
 	   \"type\": \"Vsts\",
-	   \"name\": \"BuildDemoVersion\",
+	   \"name\": \"FlyingHippoVersion\",
 	   \"variables\": {
 	     \"Library.GroupId\": {
 	       \"value\": \"${libraryGroupId}\"

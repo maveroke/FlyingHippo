@@ -6,7 +6,8 @@ environment="${1}"
 plistTargetFile="${2}"
 packageName="${3}"
 appName="${4}"
-outputDirectory="${5}"
+appCenterKey="${5}"
+outputDirectory="${6}"
 lowerCaseEnvironment="$(echo "${environment}" | tr "[:upper:]" "[:lower:]")"
 
 echo "environment: ${environment}"
@@ -42,6 +43,9 @@ sh "${outputDirectory}/read-write-plist.sh" "${plistTargetFile}" "UILaunchStoryb
 sh "${outputDirectory}/read-write-plist.sh" "${plistTargetFile}" "CFBundleDisplayName" "${label}" # display name
 sh "${outputDirectory}/read-write-plist.sh" "${plistTargetFile}" "CFBundleName" "${label}" # name 
 sh "${outputDirectory}/read-write-plist.sh" "${plistTargetFile}" "CFBundleIdentifier" "${packageName}" # id
+
+
+sh "${outputDirectory}/read-write-plist.sh" "${plistTargetFile}" "AppCenterKey" "${appCenterKey}" # id
 
 
 # sh artifactDirectory/update-plist.sh "${plistTargetFile}" "BaseUrl" "${5}"
