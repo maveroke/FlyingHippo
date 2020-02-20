@@ -1,0 +1,65 @@
+pool:
+  vmImage: 'macOS-10.14'
+
+  # Variables used:
+  # local.dotNetVersion
+  # pipe.configuration
+  # library.nugetVersion
+  # library.projectSolution
+  # library.nugetFeed
+
+variables:
+  local.dotNetVersion: '3.0.100'
+
+  #======================================================
+  # Environment Setup
+
+steps:    
+- bash: |
+   /bin/bash -c "ls /Applications"
+   /bin/bash -c "sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh 6_4_0"
+   /bin/bash -c "echo '##vso[task.setvariable variable=MD_APPLE_SDK_ROOT;]'/Applications/Xcode_11.2.1.app;sudo xcode-select --switch /Applications/Xcode_11.2.1.app/Contents/Developer"
+  displayName: 'Select SDK version'
+
+- task: DotNetCoreInstaller@0
+  inputs:
+    version: '$(local.dotNetVersion)'
+
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '$(local.dotNetVersion)'
+
+  #======================================================
+  # Nuget
+
+- task: NuGetToolInstaller@1
+  displayName: 'Use NuGet $(library.nugetVersion)'
+  inputs:
+    versionSpec: '$(library.nugetVersion)'
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(library.projectSolution)'
+    vstsFeed: '$(library.nugetFeed)'
+
+  #======================================================
+  # Build
+
+- task: MSBuild@1
+  displayName: 'Build solution $(library.projectSolution)'
+  inputs:
+    solution: '$(library.projectSolution)'
+    configuration: '$(pipe.configuration)'
+
+  #======================================================
+  # Unit Tests
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'custom'
+    projects: '**/*.Test.csproj'
+    custom: 'test'
+    arguments: '--no-build --no-restore --configuration $(pipe.configuration)'

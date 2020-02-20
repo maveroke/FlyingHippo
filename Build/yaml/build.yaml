@@ -1,0 +1,265 @@
+pool:
+  vmImage: 'macOS-10.14'
+
+  # Variables used:
+  # Local.PlistFile
+  # Local.ManifestFile
+  # Local.Prebuildscript
+  # Local.PostbuildScript
+  # Local.NugetVersion
+  # Local.ProjectSolution
+  # Local.AndroidSolution
+
+  # Library.GroupId
+  # Library.IosVersion
+  # Library.AndroidVersion
+  # Library.PackageName
+
+  # Library.CertificateFile
+  # Library.CertificatePassword
+  # Library.ProvisioningProfileFile
+  # Library.KeystoreFile
+  # Library.KeystoreAlias
+  # Library.KeystorePassword
+
+variables:
+  Local.DotNetVersion: '3.1.101'
+  Local.NugetVersion: '5.4'
+  Local.OutputDirectory: '$(Build.BinariesDirectory)/$(Pipe.Configuration)'
+  Local.PrebuildScript: '$(Build.ArtifactStagingDirectory)/main-pre-build.sh'
+  Local.AndroidBuild: '$(Build.ArtifactStagingDirectory)/main-android-build.sh'
+  Local.AndroidSolution: 'BuildDemo.Android/BuildDemo.Android.csproj'
+  Local.PlistFile: 'BuildDemo.iOS/Info.plist'
+  Local.ManifestFile: 'BuildDemo.Android/Properties/AndroidManifest.xml' 
+  Local.ProjectSolution: '**/*.sln'
+
+  #======================================================
+  # Environment Setup
+
+steps:
+- bash: |
+   /bin/bash -c "ls /Applications"
+   /bin/bash -c "sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh 6_4_0"
+   /bin/bash -c "echo '##vso[task.setvariable variable=MD_APPLE_SDK_ROOT;]'/Applications/Xcode_11.2.1.app;sudo xcode-select --switch /Applications/Xcode_11.2.1.app/Contents/Developer"
+  displayName: 'Select SDK version'
+
+- task: InstallAppleProvisioningProfile@1
+  inputs:
+    provisioningProfileLocation: 'secureFiles'
+    provProfileSecureFile: '$(Library.ProvisioningProfileFile)'
+
+# - task: DotNetCoreInstaller@0
+#   inputs:
+#     version: '$(Local.DotNetVersion)'
+
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '$(Local.DotNetVersion)'
+
+  #======================================================
+  # Prebuild ShellScripts Version and Build increment
+
+- task: Bash@3
+  displayName: 'Setup environment with scripts'
+  inputs:
+    targetType: 'inline'
+    script: |
+      cp -a Build/scripts/*.sh "$(Build.ArtifactStagingDirectory)"
+      cp -a Build/tasks/*.sh "$(Build.ArtifactStagingDirectory)"
+      echo "Copying scripts to staging directory: $(Build.ArtifactStagingDirectory)"
+      ls -d "$(Build.ArtifactStagingDirectory)"/* | xargs -n 1
+
+
+- task: Bash@3
+  displayName: 'Prebuild Script'
+  inputs:
+    targetType: filePath
+    filePath: $(Local.PrebuildScript)
+    arguments: '
+    $(Library.GroupId) 
+    $(Build.BuildId)
+    $(Library.IosVersion) 
+    $(Library.AndroidVersion) 
+    $(Local.PlistFile) 
+    $(Local.ManifestFile) 
+    $(Build.ArtifactStagingDirectory)
+    $(System.AccessToken)
+    $(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/distributedtask/variablegroups/$(Library.GroupId)?api-version=5.0-preview.1'
+
+  #======================================================
+  # Nuget
+    
+- task: NuGetToolInstaller@1
+  displayName: 'Use NuGet $(Local.NugetVersion)'
+  inputs:
+    versionSpec: '$(Local.NugetVersion)'
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(Local.ProjectSolution)'
+    vstsFeed: '$(Library.NugetFeed)'
+
+  #======================================================
+  # Xamarin.iOS
+
+- task: InstallAppleCertificate@2
+  inputs:
+    certSecureFile: '$(Library.CertificateFile)'
+    certPwd: '$(Library.CertificatePassword)'
+    keychain: 'temp'
+
+- task: InstallAppleProvisioningProfile@1
+  inputs:
+    provisioningProfileLocation: 'secureFiles'
+    provProfileSecureFile: '$(Library.ProvisioningProfileFile)'
+
+- task: XamariniOS@2
+  displayName: 'Buid iOS'
+  inputs:
+    solutionFile: '$(Local.ProjectSolution)'
+    configuration: '$(Pipe.Configuration)'
+    signingIdentity: '$(Library.CertificateAlias)'
+    signingProvisioningProfileID: '$(Library.provisioningProfileAlias)'
+    buildForSimulator: false
+    packageApp: true
+    clean: false
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'custom'
+    projects: '**/*.Tests.csproj'
+    custom: 'test'
+    arguments: '--no-build --no-restore --configuration $(pipe.configuration) --collect:"XPlat Code Coverage" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover  --logger "trx"'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'XUnit'
+    testResultsFiles: '**/*.trx'
+    testRunTitle: 'Code Tests or something'
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '**/coverage.cobertura.xml'
+
+- task: CopyFiles@2
+  inputs:
+    Contents: '**/*.ipa'
+    flattenFolders: true
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/ipas'
+
+#   ======================================================
+#   Postbuild ShellScripts switch out swift libraries (SDL)
+
+# - task: Bash@3
+#   displayName: 'Post build Script'
+#   inputs:
+#     targetType: filePath
+#     filePath: $(Local.postbuildScript)
+
+  #======================================================
+  # Xamarin.Android ShellScripts multi-build
+- task: Bash@3
+  displayName: 'QA Environment Setup'
+  inputs:
+    targetType: filePath
+    filePath: $(Local.AndroidBuild)
+    arguments: 'QA
+                $(Local.ManifestFile)
+                $(Library.PackageName)
+                QA
+                $(Build.ArtifactStagingDirectory)'
+
+- task: XamarinAndroid@1
+  displayName: 'Build Android QA'
+  inputs:
+    projectFile: '$(Local.AndroidSolution)'
+    outputDirectory: '$(Local.OutputDirectory)'
+    configuration: '$(Pipe.Configuration)'
+    jdkOption: 'JDKVersion'
+    clean: false
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Local.OutputDirectory)'
+    Contents: '*.apk'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/apks'
+  #======================================================
+
+- task: Bash@3
+  displayName: 'Pre-Prod Environment Setup'
+  inputs:
+    targetType: filePath
+    filePath: $(Local.AndroidBuild)
+    arguments: 'PRE
+                $(Local.ManifestFile)
+                $(Library.PackageName)
+                PRE
+                $(Build.ArtifactStagingDirectory)'
+
+- task: XamarinAndroid@1
+  displayName: 'Build Android PRE-PROD'
+  inputs:
+    projectFile: '$(Local.AndroidSolution)'
+    outputDirectory: '$(Local.OutputDirectory)'
+    configuration: '$(pipe.Configuration)'
+    jdkOption: 'JDKVersion'
+    clean: false
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Local.OutputDirectory)'
+    Contents: '*.apk'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/apks'
+  #======================================================
+
+- task: Bash@3
+  displayName: 'Production Environment Setup'
+  inputs:
+    targetType: filePath
+    filePath: $(Local.AndroidBuild)
+    arguments: 'PROD
+                $(Local.ManifestFile)
+                $(Library.PackageName)
+                Build
+                $(Build.ArtifactStagingDirectory)'
+
+- task: XamarinAndroid@1
+  displayName: 'Build Android PROD'
+  inputs:
+    projectFile: '$(Local.AndroidSolution)'
+    outputDirectory: '$(Local.OutputDirectory)'
+    configuration: '$(Pipe.Configuration)'
+    jdkOption: 'JDKVersion'
+    clean: false
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Local.OutputDirectory)'
+    Contents: '*.apk'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/apks'
+
+- task: AndroidSigning@3
+  inputs:
+    apkFiles: '$(Build.ArtifactStagingDirectory)/apks/*.apk'
+    apksignerKeystoreFile: '$(Library.KeystoreFile)'
+    apksignerKeystorePassword: '$(Library.KeystorePassword)'
+    apksignerKeystoreAlias: '$(Library.KeystoreAlias)'
+    apksignerKeyPassword: '$(Library.KeystorePassword)'
+    zipalign: true
+  #======================================================
+
+- bash: |
+   /bin/bash -c "ls $(Build.ArtifactStagingDirectory)/**"
+  displayName: 'Show Contents'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Pipeline Artifact'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)'
+    artifact: Lexus.Mobile
+
+
