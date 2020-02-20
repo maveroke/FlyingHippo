@@ -31,7 +31,7 @@ variables:
   Local.AndroidSolution: 'FlyingHippo/FlyingHippo.Android/FlyingHippo.Android.csproj'
   Local.PlistFile: 'FlyingHippo/FlyingHippo.iOS/Info.plist'
   Local.ManifestFile: 'FlyingHippo/FlyingHippo.Android/Properties/AndroidManifest.xml' 
-  Local.ProjectSolution: '**/*.sln'
+  Local.ProjectSolution: '**/FlyingHippo.sln'
 
   #======================================================
   # Environment Setup
