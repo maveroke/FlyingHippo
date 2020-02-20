@@ -13,7 +13,7 @@ outputDirectory="${7}"
 accessToken="${8}"
 url="${9}"
 
-assetsFolder=$(find . -name "Assets.xcassets" -maxdepth 2)
+assetsFolder=$(find . -name "Assets.xcassets" -maxdepth 3)
 
 incrementMajorMinorPatch()
 {
