@@ -69,7 +69,7 @@ steps:
       cp -a Build/scripts/*.sh "$(Build.ArtifactStagingDirectory)"
       cp -a Build/tasks/*.sh "$(Build.ArtifactStagingDirectory)"
       echo "Copying exe to staging directory: $(Build.ArtifactStagingDirectory)/exe"
-      mkdir exe/
+      mkdir "$(Build.ArtifactStagingDirectory)/exe"
       cp -a Build/exe/* "$(Build.ArtifactStagingDirectory)/exe"
       ls -d "$(Build.ArtifactStagingDirectory)"/* | xargs -n 1
 
