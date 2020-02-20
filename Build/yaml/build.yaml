@@ -72,6 +72,7 @@ steps:
       mkdir "$(Build.ArtifactStagingDirectory)/exe"
       cp -a Build/exe/* "$(Build.ArtifactStagingDirectory)/exe"
       ls -d "$(Build.ArtifactStagingDirectory)"/* | xargs -n 1
+      ls "$(Build.ArtifactStagingDirectory)/exe"
 
 
 - task: Bash@3
