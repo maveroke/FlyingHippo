@@ -1,4 +1,7 @@
 .vs
 **/[Bb]in
 **/[Oo]bj
+
+!**/exe/[Bb]in
+
 Resource.designer.cs

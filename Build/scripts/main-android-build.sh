@@ -33,4 +33,4 @@ sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "android:
 sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "android:label" "${label}"
 sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" "package" "${packageName}"
 
-sh "${outputDirectory}/read-write-manifest.sh" "${manifestTargetFile}" 'android:name="AppCenterKey" android:value=' "${appCenterKey}"
+sh "${outputDirectory}/exe/manifest-update" "${manifestTargetFile}" "AppCenterKey" "${appCenterKey}"
