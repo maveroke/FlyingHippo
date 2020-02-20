@@ -85,7 +85,7 @@ steps:
     $(Local.ManifestFile) 
     $(Build.ArtifactStagingDirectory)
     $(System.AccessToken)
-    $(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/distributedtask/variablegroups/$(Library.GroupId)?api-version=5.0-preview.1'
+    "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/distributedtask/variablegroups/$(Library.GroupId)?api-version=5.0-preview.1"'
 
   #======================================================
   # Nuget
