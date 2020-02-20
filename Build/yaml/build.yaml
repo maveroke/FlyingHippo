@@ -70,7 +70,7 @@ steps:
       cp -a Build/tasks/*.sh "$(Build.ArtifactStagingDirectory)"
       echo "Copying exe to staging directory: $(Build.ArtifactStagingDirectory)/exe"
       mkdir "$(Build.ArtifactStagingDirectory)/exe"
-      cp -a Build/exe/* "$(Build.ArtifactStagingDirectory)/exe"
+      cp -a Build/exe/bin/Debug/netcoreapp3.1/* "$(Build.ArtifactStagingDirectory)/exe"
       ls -d "$(Build.ArtifactStagingDirectory)"/* | xargs -n 1
       ls "$(Build.ArtifactStagingDirectory)/exe"
 
