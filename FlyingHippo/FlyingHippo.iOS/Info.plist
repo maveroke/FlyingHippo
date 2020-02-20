@@ -30,5 +30,7 @@
 	<string>838c5d1d-f521-45cb-9cf5-a21a0ea81760</string>
 	<key>BaseUrl</key>
 	<string>https://www.flyinghippo.com</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1</string>
 </dict>
 </plist>
