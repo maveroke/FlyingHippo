@@ -11,7 +11,7 @@ namespace FlyingHippo.ViewModels
 
         public MainPageViewModel(INavigationService navigationService, INativeSettingsService nativeSettings)
             : base(navigationService)
-        {
+        { 
             _nativeSettings = nativeSettings;
             Title = "Build Demo";
             BuildNumber = $"Version: {_nativeSettings.GetBuildNumber()} ({_nativeSettings.GetVersion()})";
